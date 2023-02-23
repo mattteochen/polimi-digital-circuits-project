@@ -1,4 +1,3 @@
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
@@ -18,7 +17,7 @@ component square is
            o_z2 : out std_logic_vector(15 downto 0);
            o_z3 : out std_logic_vector(15 downto 0);
            o_selector : out std_logic_vector(1 downto 0);
-           o_memory : out std_logic_vector(15 downto 0);
+           o_memory_addr : out std_logic_vector(15 downto 0);
            o_counter : out STD_LOGIC_VECTOR (7 downto 0));
 end component;
 signal i_clk : STD_LOGIC;
@@ -27,7 +26,7 @@ signal i_start : STD_LOGIC;
 signal i_w : STD_LOGIC;
 signal o_done : STD_LOGIC;
 signal o_counter : STD_LOGIC_VECTOR (7 downto 0);
-signal o_memory : STD_LOGIC_VECTOR (15 downto 0);
+signal o_memory_addr : STD_LOGIC_VECTOR (15 downto 0);
 signal o_z1 : STD_LOGIC_VECTOR (15 downto 0);
 signal o_z2 : STD_LOGIC_VECTOR (15 downto 0);
 signal o_z3 : STD_LOGIC_VECTOR (15 downto 0);
@@ -46,11 +45,11 @@ begin
         o_z2,
         o_z3,
         o_selector,
-        o_memory,
+        o_memory_addr,
         o_counter
     );
     
-    i_w <= '1';
+    --i_w <= '1';
         
     process
     begin
@@ -62,31 +61,40 @@ begin
     
     process
     begin
+        i_w <= '0';
         i_start <= '0';
         i_res <= '1';
         wait for 20 ns;
-        i_start <= '1';
         i_res <= '0';
+        --wait for 20 ns;
+        --wait for 20 ns;
+        i_start <= '1';
+        i_w <= '1';
         wait for 20 ns;
+        i_w <= '0';
         wait for 20 ns;
-        wait for 20 ns;
-        wait for 20 ns;
-        wait for 20 ns;
-        wait for 20 ns;
-        wait for 20 ns;
-        wait for 20 ns;
-        wait for 20 ns;
+        i_w <= '1';
         wait for 20 ns;
         i_start <= '0';
         wait for 20 ns;
         wait for 20 ns;
         wait for 20 ns;
         wait for 20 ns;
+        
+        i_w <= '0';
+        i_start <= '0';
+        wait for 20 ns;
+        i_res <= '0';
         wait for 20 ns;
         wait for 20 ns;
         i_start <= '1';
+        i_w <= '0';
         wait for 20 ns;
+        i_w <= '1';
         wait for 20 ns;
+        i_w <= '1';
+        wait for 20 ns;
+        i_start <= '0';
         wait for 20 ns;
         wait for 20 ns;
         wait for 20 ns;
