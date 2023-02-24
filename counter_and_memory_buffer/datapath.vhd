@@ -2,10 +2,11 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.NUMERIC_STD.ALL;
+use ieee.std_logic_1164.all;
 
 entity datapath is
     Port ( i_clk : in STD_LOGIC;
-           i_res : in STD_LOGIC;
+           i_rst : in STD_LOGIC;
            i_start : in std_logic;
            i_w : in std_logic;
            i_show : in std_logic;
@@ -13,54 +14,49 @@ entity datapath is
            i_z1_load : in std_logic;
            i_z2_load : in std_logic;
            i_z3_load : in std_logic;
+           i_mem_data : in std_logic_vector(7 downto 0);
            
-           o_z0 : out std_logic_vector(15 downto 0);
-           o_z1 : out std_logic_vector(15 downto 0);
-           o_z2 : out std_logic_vector(15 downto 0);
-           o_z3 : out std_logic_vector(15 downto 0);
-           o_selctor : out std_logic_vector(1 downto 0); -- the test out selector
-           o_memory_addr : out std_logic_vector(15 downto 0); --the test memory buffer
-           o_counter : out std_logic_vector(7 downto 0) --the sum result
-           --o_end : out STD_LOGIC --signal the end of the operation
+           o_z0 : out std_logic_vector(7 downto 0);
+           o_z1 : out std_logic_vector(7 downto 0);
+           o_z2 : out std_logic_vector(7 downto 0);
+           o_z3 : out std_logic_vector(7 downto 0);
+           --o_selector : out std_logic_vector(1 downto 0); -- the test out selector
+           o_mem_addr : out std_logic_vector(15 downto 0); --the test memory buffer
+           o_adj_mem_addr : out std_logic_vector(15 downto 0) --the test memory buffer
+           --o_counter : out std_logic_vector(4 downto 0) --the sum result
      );
 end datapath;
 
 
 architecture Behavioral of datapath is
 
-signal sum : STD_LOGIC_VECTOR(7 downto 0);
-signal o_reg_sum : STD_LOGIC_VECTOR (7 downto 0);
-signal o_reg_memory_address : STD_LOGIC_VECTOR (15 downto 0);
+signal sum : STD_LOGIC_VECTOR(4 downto 0);
+signal o_reg_sum : STD_LOGIC_VECTOR (4 downto 0);
+signal o_reg_mem_addr : STD_LOGIC_VECTOR (15 downto 0);
+signal o_reg_adj_mem_addr : std_logic_vector(15 downto 0);
 signal o_reg_selector : std_logic_vector(1 downto 0);
-signal o_reg_z0 : STD_LOGIC_VECTOR (15 downto 0);
-signal o_reg_z1 : STD_LOGIC_VECTOR (15 downto 0);
-signal o_reg_z2 : STD_LOGIC_VECTOR (15 downto 0);
-signal o_reg_z3 : STD_LOGIC_VECTOR (15 downto 0);
-signal o_mux_z0 : STD_LOGIC_VECTOR (15 downto 0);
-signal o_mux_z1 : STD_LOGIC_VECTOR (15 downto 0);
-signal o_mux_z2 : STD_LOGIC_VECTOR (15 downto 0);
-signal o_mux_z3 : STD_LOGIC_VECTOR (15 downto 0);
+signal o_reg_z0 : STD_LOGIC_VECTOR (7 downto 0);
+signal o_reg_z1 : STD_LOGIC_VECTOR (7 downto 0);
+signal o_reg_z2 : STD_LOGIC_VECTOR (7 downto 0);
+signal o_reg_z3 : STD_LOGIC_VECTOR (7 downto 0);
 --needed to reset the memory_addr buffer when entering a new start sequence coming from a START=0 sequence.
 --needed to raise the end flag as it signals the transition from the last 1 bit of a START=1 sequence to the first 0 bit of a START=0 sequence.
 signal start_sequence_entered : std_logic;
 
 begin    
-    process(i_clk, i_res)
+    process(i_clk, i_rst)
     begin
-        if(i_res = '1') then
+        if(i_rst = '1') then
         
-            o_reg_sum <= "00000000";
-            o_reg_memory_address <= "0000000000000000";
+            o_reg_sum <= "00000";
+            o_reg_mem_addr <= "0000000000000000";
+            o_reg_adj_mem_addr <= "0000000000000000";
             o_reg_selector <= "00";
-            o_reg_z0 <= "0000000000000000";
-            o_reg_z1 <= "0000000000000000";
-            o_reg_z2 <= "0000000000000000";
-            o_reg_z3 <= "0000000000000000";
+            o_reg_z0 <= "00000000";
+            o_reg_z1 <= "00000000";
+            o_reg_z2 <= "00000000";
+            o_reg_z3 <= "00000000";
             start_sequence_entered <= '0';
-            o_mux_z0 <= "0000000000000000";
-            o_mux_z1 <= "0000000000000000";
-            o_mux_z2 <= "0000000000000000";
-            o_mux_z3 <= "0000000000000000";
             
         elsif i_clk'event and i_clk = '1' then
         
@@ -69,7 +65,8 @@ begin
                             
                 --reset memory register if first bit of the valid sequence, (we can leave selector register as is as it will be always overwritten)
                 if start_sequence_entered = '0' then
-                    o_reg_memory_address <= "0000000000000000";
+                    o_reg_mem_addr <= "0000000000000000";
+                    o_reg_adj_mem_addr <= "0000000000000000";
                     --o_reg_selector <= "00";
                 end if;
                 
@@ -80,62 +77,63 @@ begin
                 start_sequence_entered <= '1';
                 
                 --save the selector bits if the sum inside its reg is < 2
-                if o_reg_sum = "00000000" then
+                if o_reg_sum = "00000" then
                     o_reg_selector(1) <= i_w;
-                elsif o_reg_sum = "00000001" then
+                elsif o_reg_sum = "00001" then
                     o_reg_selector(0) <= i_w;
                 --after the selector, save the 16(max) bits of the memory (reg_sum >= 2)
                 else
                     --setting to the Ith index of the vector to i_w. The position is deducted by
                     --  two as the first two counts have been reserved to the selector computation
-                    o_reg_memory_address(to_integer(unsigned(o_reg_sum - "00000010"))) <= i_w;
+                    o_reg_mem_addr(to_integer(unsigned(o_reg_sum - "00010"))) <= i_w;
                 end if;
                 
-                --set the END value (avoid undefined)
-                --o_end <= '0';
-                
             else
+                --after the START=1 sequence, create the swapped memory_address
+                if start_sequence_entered = '1' then
+                    for i in 0 to to_integer(unsigned(o_reg_sum - "00011"))
+                    loop
+                        o_reg_adj_mem_addr(to_integer(unsigned(o_reg_sum - "00011"))-i) <= o_reg_mem_addr(i);
+                    end loop;
+                end if;
             
                 --the read flag is down (START=0), don't read more bits from W. Mirror the memory address (memory read TBD) to the output channel based on the selector value.
                 if o_reg_selector = "00" and i_z0_load = '1' then
-                    o_reg_z0 <= o_reg_memory_address;  
+                    o_reg_z0 <= i_mem_data;  
                 elsif o_reg_selector = "01" and i_z1_load = '1' then
-                    o_reg_z1 <= o_reg_memory_address;
+                    o_reg_z1 <= i_mem_data;
                 elsif o_reg_selector = "10" and i_z2_load = '1' then
-                    o_reg_z2 <= o_reg_memory_address;
+                    o_reg_z2 <= i_mem_data;
                 elsif o_reg_selector = "11"  and i_z3_load = '1'then
-                    o_reg_z3 <= o_reg_memory_address; 
+                    o_reg_z3 <= i_mem_data; 
                 end if;
                 
                 --reset counter reg for the next cycle.
-                o_reg_sum <= "00000000";
+                o_reg_sum <= "00000";
                 
                 --if a start sequence has been started and is ended, we have finished the computation (memory read TBD), hence we signal END=1 and reset this flag
                 if start_sequence_entered = '1' then
-                    --o_end <= '1';
                     start_sequence_entered <= '0';
-                --otherwise start sequence has never been raised (START=000...000), keep END=0
-                else
-                    --o_end <= '0';
                 end if;
               
             end if;
         end if;
     end process;
     
-    sum <= o_reg_sum + "00000001"; --if i_start is low, sum is constant!
+    sum <= o_reg_sum + "00001"; --if i_start is low, sum is constant!
     
     --helper output to debug the sum values
-    o_counter <= o_reg_sum;
+    --o_counter <= o_reg_sum;
     --helper output to debug memory address read from W
-    o_memory_addr <= o_reg_memory_address;
+    o_mem_addr <= o_reg_adj_mem_addr;
     --helper output to debug selector choice read from W
-    o_selctor <= o_reg_selector;
+    --o_selector <= o_reg_selector;
+    o_adj_mem_addr <= o_reg_adj_mem_addr;
     
     --apply the mux mask to the output channels
-    o_z0 <= o_reg_z0 when(i_show = '1') else "0000000000000000";
-    o_z1 <= o_reg_z1 when(i_show = '1') else "0000000000000000";
-    o_z2 <= o_reg_z2 when(i_show = '1') else "0000000000000000";
-    o_z3 <= o_reg_z3 when(i_show = '1') else "0000000000000000";
+    o_z0 <= o_reg_z0 when(i_show = '1') else "00000000";
+    o_z1 <= o_reg_z1 when(i_show = '1') else "00000000";
+    o_z2 <= o_reg_z2 when(i_show = '1') else "00000000";
+    o_z3 <= o_reg_z3 when(i_show = '1') else "00000000";
     
 end Behavioral;
