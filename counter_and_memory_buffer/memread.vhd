@@ -22,7 +22,6 @@ architecture Behavioral of square is
 component datapath is
     Port ( i_clk : in STD_LOGIC;
            i_res : in STD_LOGIC;
-           i_reg_sum_load : in STD_LOGIC;
            i_start : in std_logic;
            i_w : in std_logic;
            i_show : in std_logic;
@@ -41,7 +40,6 @@ component datapath is
            --o_end : out STD_LOGIC --signal the end of the operation
      );
 end component;
-signal i_reg_sum_load : STD_LOGIC;
 signal o_end : STD_LOGIC;
 signal i_show : std_logic;
 signal i_z0_load : std_logic;
@@ -57,7 +55,6 @@ begin
     DATAPATH0: datapath port map(
         i_clk,
         i_res,
-        i_reg_sum_load,
         i_start,
         i_w,
         i_show,
@@ -101,13 +98,16 @@ begin
             when S3 =>
                 next_state <= S4;
             when S4 =>
-                next_state <= S0;
+                if i_start = '0' then
+                    next_state <= S0;
+                else
+                    next_state <= S1;
+                end if;
         end case;
     end process;
     
     process(cur_state)
     begin
-        i_reg_sum_load <= '0';
         o_done <= '0';
         i_show <= '0';
         i_z0_load <= '0';
@@ -116,9 +116,7 @@ begin
         i_z3_load <= '0';
         case cur_state is
             when S0 =>
-                i_reg_sum_load <= '1';
             when S1 =>
-                i_reg_sum_load <= '1';
             when S2 =>
             when S3 =>
                 i_z0_load <= '1';
