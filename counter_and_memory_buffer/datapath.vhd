@@ -6,10 +6,14 @@ use IEEE.NUMERIC_STD.ALL;
 entity datapath is
     Port ( i_clk : in STD_LOGIC;
            i_res : in STD_LOGIC;
-           --r_load : in STD_LOGIC;
+           i_reg_sum_load : in STD_LOGIC;
            i_start : in std_logic;
            i_w : in std_logic;
            i_show : in std_logic;
+           i_z0_load : in std_logic;
+           i_z1_load : in std_logic;
+           i_z2_load : in std_logic;
+           i_z3_load : in std_logic;
            
            o_z0 : out std_logic_vector(15 downto 0);
            o_z1 : out std_logic_vector(15 downto 0);
@@ -17,8 +21,8 @@ entity datapath is
            o_z3 : out std_logic_vector(15 downto 0);
            o_selctor : out std_logic_vector(1 downto 0); -- the test out selector
            o_memory_addr : out std_logic_vector(15 downto 0); --the test memory buffer
-           o_counter : out std_logic_vector(7 downto 0); --the sum result
-           o_end : out STD_LOGIC --signal the end of the operation
+           o_counter : out std_logic_vector(7 downto 0) --the sum result
+           --o_end : out STD_LOGIC --signal the end of the operation
      );
 end datapath;
 
@@ -71,7 +75,10 @@ begin
                 end if;
                 
                 --assign to the sum reg the previous sum operation result
-                o_reg_sum <= sum;
+                --TODO: consider using reg_sum_load
+                if i_reg_sum_load = '1' then
+                    o_reg_sum <= sum;
+                end if;
                 
                 --raise the sequence entering flag
                 start_sequence_entered <= '1';
@@ -89,18 +96,18 @@ begin
                 end if;
                 
                 --set the END value (avoid undefined)
-                o_end <= '0';
+                --o_end <= '0';
                 
-            elsif i_start = '0' then
+            else
             
                 --the read flag is down (START=0), don't read more bits from W. Mirror the memory address (memory read TBD) to the output channel based on the selector value.
-                if o_reg_selector = "00" then
-                    o_reg_z0 <= o_reg_memory_address;
-                elsif o_reg_selector = "01" then
+                if o_reg_selector = "00" and i_z0_load = '1' then
+                    o_reg_z0 <= o_reg_memory_address;  
+                elsif o_reg_selector = "01" and i_z1_load = '1' then
                     o_reg_z1 <= o_reg_memory_address;
-                elsif o_reg_selector = "10" then
+                elsif o_reg_selector = "10" and i_z2_load = '1' then
                     o_reg_z2 <= o_reg_memory_address;
-                elsif o_reg_selector = "11" then
+                elsif o_reg_selector = "11"  and i_z3_load = '1'then
                     o_reg_z3 <= o_reg_memory_address; 
                 end if;
                 
@@ -109,11 +116,11 @@ begin
                 
                 --if a start sequence has been started and is ended, we have finished the computation (memory read TBD), hence we signal END=1 and reset this flag
                 if start_sequence_entered = '1' then
-                    o_end <= '1';
+                    --o_end <= '1';
                     start_sequence_entered <= '0';
                 --otherwise start sequence has never been raised (START=000...000), keep END=0
                 else
-                    o_end <= '0';
+                    --o_end <= '0';
                 end if;
               
             end if;

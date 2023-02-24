@@ -1,3 +1,4 @@
+
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
@@ -66,7 +67,7 @@ begin
         i_res <= '1';
         wait for 20 ns;
         i_res <= '0';
-        --wait for 20 ns;
+        wait for 60 ns;
         --wait for 20 ns;
         i_start <= '1';
         i_w <= '1';
@@ -75,10 +76,10 @@ begin
         wait for 20 ns;
         i_w <= '1';
         wait for 20 ns;
+        wait for 20 ns;
+        wait for 20 ns;
+        wait for 20 ns;
         i_start <= '0';
-        wait for 20 ns;
-        wait for 20 ns;
-        wait for 20 ns;
         wait for 20 ns;
         
         i_w <= '0';
@@ -86,7 +87,7 @@ begin
         wait for 20 ns;
         i_res <= '0';
         wait for 20 ns;
-        wait for 20 ns;
+        wait for 40 ns;
         i_start <= '1';
         i_w <= '0';
         wait for 20 ns;
