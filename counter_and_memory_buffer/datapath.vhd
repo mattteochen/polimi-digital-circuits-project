@@ -6,7 +6,6 @@ use IEEE.NUMERIC_STD.ALL;
 entity datapath is
     Port ( i_clk : in STD_LOGIC;
            i_res : in STD_LOGIC;
-           i_reg_sum_load : in STD_LOGIC;
            i_start : in std_logic;
            i_w : in std_logic;
            i_show : in std_logic;
@@ -75,10 +74,7 @@ begin
                 end if;
                 
                 --assign to the sum reg the previous sum operation result
-                --TODO: consider using reg_sum_load
-                if i_reg_sum_load = '1' then
-                    o_reg_sum <= sum;
-                end if;
+                o_reg_sum <= sum;
                 
                 --raise the sequence entering flag
                 start_sequence_entered <= '1';
