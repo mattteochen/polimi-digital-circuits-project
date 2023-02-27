@@ -61,8 +61,8 @@ for _ in range(TBnum):
     template = template.replace("$fallbackValue$", str(fallbackValue))
 
     # Block = sequence of Reset+ W + Start signal 
-    # W: 2bit selector + rndBit[1-16] + rndBuffer[4-maxBufferLength]
-    #   assuming 4 as minimum Buffer length to allow the shortest cycle to
+    # W: 2bit selector + rndBit[1-16] + rndBuffer[6-maxBufferLength]
+    #   assuming 6 as minimum Buffer length to allow the shortest cycle to
     #   end and set up done to 1 and back to 0 before restarting 
     # R: "0" everywhere, randomly 1 or 0 with a randomResetProb after W
     # S: "1" under selector and rndBits and "0" everywhere else
@@ -92,7 +92,7 @@ for _ in range(TBnum):
         
         scenarioLength += len(memoryAddress)
 
-        bufferLength = random.randint(4,maxBufferLength)
+        bufferLength = random.randint(6,maxBufferLength)
         scenarioLength += bufferLength
         buffer = "0" * bufferLength
         '''
