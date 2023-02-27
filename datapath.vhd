@@ -2,7 +2,6 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.NUMERIC_STD.ALL;
-use ieee.std_logic_1164.all;
 
 entity datapath is
     Port ( i_clk : in STD_LOGIC;
@@ -80,19 +79,15 @@ begin
                     o_reg_selector(0) <= i_w;
                 --after the selector, save the 16(max) bits of the memory (reg_sum >= 2)
                 else
-                    --setting to the Ith index of the vector to i_w. The position is deducted by
-                    --  two as the first two counts have been reserved to the selector computation
-                    o_reg_mem_addr(to_integer(unsigned(o_reg_sum - "00010"))) <= i_w;
+                    --start the buffer write from the MSB (17 - reg_sum(>=2) = 15). No overflow check as given from the tb.
+                    o_reg_mem_addr(17 - to_integer(unsigned(o_reg_sum))) <= i_w;
                 end if;
                 
             else
-                --after the START=1 sequence, create the swapped memory_address
-                --here we are subtracting 0x3 and not 0x2 from the sum register value as a clock cycle has passed from the correct index pointed out from the sum register value itself
+                --some bits manipulation: after the START=1 sequence, create the adjusted memory_address by logic shift the buffer bits to the right by the formula: [15 - (current_counter -3)]
+                --note that the current counter has incremented by one from the last START=1 signal clock cycle, the "minus 3 magic" comes from here (see the written report for more)
                 if start_sequence_entered = '1' then
-                    for i in 0 to to_integer(unsigned(o_reg_sum - "00011"))
-                    loop
-                        o_reg_adj_mem_addr(to_integer(unsigned(o_reg_sum - "00011"))-i) <= o_reg_mem_addr(i);
-                    end loop;
+                    o_reg_adj_mem_addr <= std_logic_vector(unsigned(o_reg_mem_addr) srl (15 - (to_integer(unsigned(o_reg_sum)) - 3)));
                 end if;
             
                 --the read flag is down (START=0), don't read more bits from W. Mirror the memory value to the output channel based on the selector value.
@@ -120,7 +115,7 @@ begin
     
     sum <= o_reg_sum + "00001"; --if i_start is low, sum is constant!
     
-    --assign the correct (swapped) memory address
+    --assign the correct (shifted) memory address
     o_mem_addr <= o_reg_adj_mem_addr;
     
     --apply the mux mask to the output channels
