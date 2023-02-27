@@ -1,4 +1,12 @@
 import random
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-s", "--seed", dest="seed", type=int, nargs='?')
+
+args = parser.parse_args()
+
+seed = random.randint(0,1000000000) if args.seed is None else args.seed
 
 arrayLength = 65535
 numberOfRAMChunks = 2000 # must be < arrayLength
@@ -6,6 +14,9 @@ maxBlocks = 100
 maxBufferLength = 30
 randomResetProb = 0.2
 positions = ["00","01","10","11"]
+
+
+random.seed(seed)
 
 # variables to be replaced are wrapped in dollar sign
 
@@ -81,7 +92,7 @@ for bn in range(numberOfBlocks):
     testAsserts += checkEmpty
     testAsserts += "\tWAIT UNTIL tb_done = '1';\n"
     testAsserts += "\tWAIT FOR CLOCK_PERIOD/2;\n"
-    testAsserts += f"\tASSERT tb_z{posDec} = std_logic_vector(to_unsigned({memValue}, 8)) severity failure;"
+    testAsserts += f"\tASSERT tb_z{posDec} = std_logic_vector(to_unsigned({memValue}, 8)) severity failure; --{memoryAddress}:{memValue}\n"
     testAsserts += "\tWAIT UNTIL tb_done = '0';\n"
     testAsserts += "\tWAIT FOR CLOCK_PERIOD/2;\n"
     testAsserts += checkEmpty
@@ -94,7 +105,7 @@ template = template.replace("$scenarioReset$",reset)
 template = template.replace("$scenarioLength$",str(scenarioLength))
 template = template.replace("$testAsserts$",testAsserts)
 
-with open(f"tests/tb_{random.randint(0,100000000)}.vhd","w") as f:
+with open(f"tests/tb_{seed}.vhd","w") as f:
     f.write(template)
     f.close()
 
