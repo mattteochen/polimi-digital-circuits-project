@@ -32,6 +32,8 @@ component datapath is
            i_z2_load : in std_logic;
            i_z3_load : in std_logic;
            i_mem_data : in std_logic_vector(7 downto 0);
+           i_update_mem_addr : in std_logic;
+           i_reset_mem : in std_logic;
            
            o_z0 : out std_logic_vector(7 downto 0);
            o_z1 : out std_logic_vector(7 downto 0);
@@ -46,6 +48,8 @@ signal i_z0_load : std_logic;
 signal i_z1_load : std_logic;
 signal i_z2_load : std_logic;
 signal i_z3_load : std_logic;
+signal i_update_mem_addr : std_logic;
+signal i_reset_mem : std_logic;
 
 type S is (S0,S1,S2,S3,S4,S5);
 signal cur_state, next_state : S;
@@ -62,6 +66,8 @@ begin
         i_z2_load,
         i_z3_load,
         i_mem_data,
+        i_update_mem_addr,
+        i_reset_mem,
         o_z0,
         o_z1,
         o_z2,
@@ -115,10 +121,16 @@ begin
         i_z1_load <= '0';
         i_z2_load <= '0';
         i_z3_load <= '0';
+        i_update_mem_addr <= '0';
+        i_reset_mem <= '0';
+        
         case cur_state is
             when S0 =>
+                i_reset_mem <= '1';
             when S1 =>
+                i_update_mem_addr <= '1';
             when S2 =>
+                
                 o_mem_en <= '1';
             when S3 =>
                 o_mem_en <= '1';
@@ -151,6 +163,8 @@ entity datapath is
            i_z2_load : in std_logic;
            i_z3_load : in std_logic;
            i_mem_data : in std_logic_vector(7 downto 0);
+           i_update_mem_addr : in std_logic;
+           i_reset_mem : in std_logic;
            
            o_z0 : out std_logic_vector(7 downto 0);
            o_z1 : out std_logic_vector(7 downto 0);
@@ -173,12 +187,11 @@ signal o_reg_z1 : STD_LOGIC_VECTOR (7 downto 0);
 signal o_reg_z2 : STD_LOGIC_VECTOR (7 downto 0);
 signal o_reg_z3 : STD_LOGIC_VECTOR (7 downto 0);
 --needed to reset the memory_addr buffer when entering a new start sequence coming from a START=0 sequence.
---needed to raise the end flag as it signals the transition from the last 1 bit of a START=1 sequence to the first 0 bit of a START=0 sequence.
-signal start_sequence_entered : std_logic;
 
 begin    
     process(i_clk, i_rst)
     begin
+        
         if(i_rst = '1') then
         
             o_reg_sum <= "00000";
@@ -189,25 +202,17 @@ begin
             o_reg_z1 <= "00000000";
             o_reg_z2 <= "00000000";
             o_reg_z3 <= "00000000";
-            start_sequence_entered <= '0';
             
         elsif i_clk'event and i_clk = '1' then
         
             --if r_load = '1' and i_start = '1' then
             if i_start = '1' then
-                            
-                --reset memory register if first bit of the valid sequence, (we can leave selector register as is as it will be always overwritten)
-                if start_sequence_entered = '0' then
-                    o_reg_mem_addr <= "0000000000000000";
-                    o_reg_adj_mem_addr <= "0000000000000000";
-                    --o_reg_selector <= "00";
-                end if;
                 
                 --assign to the sum register the previous sum operation result
                 o_reg_sum <= sum;
                 
                 --raise the sequence entering flag
-                start_sequence_entered <= '1';
+                --start_sequence_entered <= '1';
                 
                 --save the selector bits if the sum inside its reg is < 2
                 if o_reg_sum = "00000" then
@@ -219,11 +224,12 @@ begin
                     --start the buffer write from the MSB (17 - reg_sum(>=2) = 15). No overflow check as given from the tb.
                     o_reg_mem_addr(17 - to_integer(unsigned(o_reg_sum))) <= i_w;
                 end if;
-                
             else
+                o_reg_sum <= "00000";
+            end if;
                 --some bits manipulation: after the START=1 sequence, create the adjusted memory_address by logic shift the buffer bits to the right by the formula: [15 - (current_counter -3)]
                 --note that the current counter has incremented by one from the last START=1 signal clock cycle, the "minus 3 magic" comes from here (see the written report for more)
-                if start_sequence_entered = '1' then
+                if i_update_mem_addr = '1' then
                     o_reg_adj_mem_addr <= std_logic_vector(unsigned(o_reg_mem_addr) srl (15 - (to_integer(unsigned(o_reg_sum)) - 3)));
                 end if;
             
@@ -237,15 +243,12 @@ begin
                 elsif o_reg_selector = "11"  and i_z3_load = '1'then
                     o_reg_z3 <= i_mem_data; 
                 end if;
-                
-                --reset counter reg for the next cycle.
-                o_reg_sum <= "00000";
-                
-                --if a start sequence has been started and is ended, we have finished the computation
-                if start_sequence_entered = '1' then
-                    start_sequence_entered <= '0';
-                end if;
-              
+        
+            --reset memory register if first bit of the valid sequence, (we can leave selector register as is as it will be always overwritten)
+            if i_reset_mem = '1' then
+                o_reg_mem_addr <= "0000000000000000";
+                o_reg_adj_mem_addr <= "0000000000000000";
+                --o_reg_selector <= "00";
             end if;
         end if;
     end process;
