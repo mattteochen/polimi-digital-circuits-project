@@ -95,18 +95,13 @@ for _ in range(TBnum):
         bufferLength = random.randint(6,maxBufferLength)
         scenarioLength += bufferLength
         buffer = "0" * bufferLength
-        '''
+        
         resetFlag = "1" if random.random() <= randomResetProb else "0"
         scenarioLength += 1
 
         w += f"{pos}{memoryAddress}{buffer}0"
         start += f"11{'1' * len(memoryAddress)}{buffer}0"
         reset += f"00{'0' * len(memoryAddress)}{buffer}{resetFlag}"
-        '''
-
-        w += f"{pos}{memoryAddress}{buffer}"
-        start += f"11{'1' * len(memoryAddress)}{buffer}"
-        reset += f"00{'0' * len(memoryAddress)}{buffer}"
 
         testAsserts += "\tWAIT UNTIL tb_start = '1';\n"
         testAsserts += checkEmpty

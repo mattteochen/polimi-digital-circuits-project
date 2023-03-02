@@ -126,11 +126,9 @@ begin
         
         case cur_state is
             when S0 =>
-                i_reset_mem <= '1';
             when S1 =>
                 i_update_mem_addr <= '1';
             when S2 =>
-                
                 o_mem_en <= '1';
             when S3 =>
                 o_mem_en <= '1';
@@ -142,6 +140,7 @@ begin
             when S5 =>
                 i_show <= '1';
                 o_done <= '1';
+                i_reset_mem <= '1';
         end case;
     end process;
     
@@ -227,22 +226,23 @@ begin
             else
                 o_reg_sum <= "00000";
             end if;
-                --some bits manipulation: after the START=1 sequence, create the adjusted memory_address by logic shift the buffer bits to the right by the formula: [15 - (current_counter -3)]
-                --note that the current counter has incremented by one from the last START=1 signal clock cycle, the "minus 3 magic" comes from here (see the written report for more)
-                if i_update_mem_addr = '1' then
-                    o_reg_adj_mem_addr <= std_logic_vector(unsigned(o_reg_mem_addr) srl (15 - (to_integer(unsigned(o_reg_sum)) - 3)));
-                end if;
-            
-                --the read flag is down (START=0), don't read more bits from W. Mirror the memory value to the output channel based on the selector value.
-                if o_reg_selector = "00" and i_z0_load = '1' then
-                    o_reg_z0 <= i_mem_data;  
-                elsif o_reg_selector = "01" and i_z1_load = '1' then
-                    o_reg_z1 <= i_mem_data;
-                elsif o_reg_selector = "10" and i_z2_load = '1' then
-                    o_reg_z2 <= i_mem_data;
-                elsif o_reg_selector = "11"  and i_z3_load = '1'then
-                    o_reg_z3 <= i_mem_data; 
-                end if;
+
+            --some bits manipulation: after the START=1 sequence, create the adjusted memory_address by logic shift the buffer bits to the right by the formula: [15 - (current_counter -3)]
+            --note that the current counter has incremented by one from the last START=1 signal clock cycle, the "minus 3 magic" comes from here (see the written report for more)
+            if i_update_mem_addr = '1' then
+                o_reg_adj_mem_addr <= std_logic_vector(unsigned(o_reg_mem_addr) srl (18 - to_integer(unsigned(o_reg_sum))));
+            end if;
+        
+            --the read flag is down (START=0), don't read more bits from W. Mirror the memory value to the output channel based on the selector value.
+            if o_reg_selector = "00" and i_z0_load = '1' then
+                o_reg_z0 <= i_mem_data;  
+            elsif o_reg_selector = "01" and i_z1_load = '1' then
+                o_reg_z1 <= i_mem_data;
+            elsif o_reg_selector = "10" and i_z2_load = '1' then
+                o_reg_z2 <= i_mem_data;
+            elsif o_reg_selector = "11"  and i_z3_load = '1'then
+                o_reg_z3 <= i_mem_data; 
+            end if;
         
             --reset memory register if first bit of the valid sequence, (we can leave selector register as is as it will be always overwritten)
             if i_reset_mem = '1' then
@@ -250,6 +250,7 @@ begin
                 o_reg_adj_mem_addr <= "0000000000000000";
                 --o_reg_selector <= "00";
             end if;
+            
         end if;
     end process;
     
