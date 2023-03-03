@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2023-03-03T17:04:01.063Z" agent="5.0 (Macintosh)" etag="s8VYYbrp_k0mCeoeNvdP" version="21.0.2" type="github">
+<mxfile host="app.diagrams.net" modified="2023-03-03T17:17:49.669Z" agent="5.0 (Macintosh)" etag="rH4R5-aD7Dukwbm9NVNM" version="21.0.2" type="github">
   <diagram name="Page-1" id="xVvlnEhS2XIw0pVSGgDO">
     <mxGraphModel dx="1434" dy="797" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="1920" math="0" shadow="0">
       <root>
@@ -113,6 +113,9 @@
           <mxGeometry x="-0.2198" y="-3" relative="1" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>
+        </mxCell>
+        <mxCell id="IhOhVh6177IZjPa4SBfm-2" value="Tutti i flag sono posti a &quot;0&quot; dove non specificato" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="730" y="190" width="260" height="30" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
