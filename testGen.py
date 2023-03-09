@@ -112,7 +112,8 @@ for _ in range(TBnum):
         testAsserts += "\tWAIT UNTIL tb_done = '1';\n"
         testAsserts += "\tWAIT FOR CLOCK_PERIOD/2;\n"
         for i in range(4):
-            testAsserts += f"\tASSERT tb_z{i} = std_logic_vector(to_unsigned({memvalues[i]}, 8)) severity failure; -- {posDec == i ? "UPDATED" : "NOT UPDATED"} \n"    
+            comment = f"{memoryAddress}:{memValue}->{posDec}" if (posDec == i) else "NOT UPDATED" 
+            testAsserts += f"\tASSERT tb_z{i} = std_logic_vector(to_unsigned({memValues[i]}, 8)) severity failure; -- {comment} \n"    
         testAsserts += "\tWAIT UNTIL tb_done = '0';\n"
         testAsserts += "\tWAIT FOR CLOCK_PERIOD/2;\n"
         testAsserts += checkEmpty
