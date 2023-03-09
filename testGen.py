@@ -5,7 +5,7 @@ import datetime
 
 parser = argparse.ArgumentParser(
     prog = "TestBench generator - RL23 - PoliMi",
-    description = "This script generates testbenches for the Final Project of Digital Logic Design (Reti Logiche) ~ PoliMi - Prof. William Fornaciari - A.Y.2022-23",
+    description = "This script generates testbenches for the Final Project of Digital Logic Design (Reti Logiche) ~ PoliMi - Prof. William Fornaciari - A.Y. 2022-23",
     epilog = "Credits: Francesco Buccoliero - Kaixi Matteo Chen ~ francesco.buccoliero@mail.polimi.it - kaiximatteo.chen@mail.polimi.it"
     )
 parser.add_argument("-s", "--seed", dest="seed", type=int, default = random.randint(0,1000000000), help="Seed for the random number generator. Set it to a previously generated TB to recreate the same situation")
@@ -78,6 +78,8 @@ for _ in range(TBnum):
 
     testAsserts = ''
 
+    memValues = [0,0,0,0]
+
     for bn in range(numberOfBlocks):
         pos = random.choice(positions)
         posDec = positions.index(pos)
@@ -89,6 +91,8 @@ for _ in range(TBnum):
         mem = random.randint(0,arrayLength)
         memValue = RAM.get(mem, fallbackValue)
         memoryAddress = str(bin(mem)).split("0b")[1][::-1]
+
+        memValues[posDec] = memValue
         
         scenarioLength += len(memoryAddress)
 
@@ -107,10 +111,13 @@ for _ in range(TBnum):
         testAsserts += checkEmpty
         testAsserts += "\tWAIT UNTIL tb_done = '1';\n"
         testAsserts += "\tWAIT FOR CLOCK_PERIOD/2;\n"
-        testAsserts += f"\tASSERT tb_z{posDec} = std_logic_vector(to_unsigned({memValue}, 8)) severity failure; -- {memoryAddress}:{memValue} -> {pos} \n"
+        for i in range(4):
+            testAsserts += f"\tASSERT tb_z{i} = std_logic_vector(to_unsigned({memvalues[i]}, 8)) severity failure; -- {posDec == i ? "UPDATED" : "NOT UPDATED"} \n"    
         testAsserts += "\tWAIT UNTIL tb_done = '0';\n"
         testAsserts += "\tWAIT FOR CLOCK_PERIOD/2;\n"
         testAsserts += checkEmpty
+        if resetFlag == "1":
+            memValues = [0,0,0,0]
 
     assert len(w) == len(start) == len(reset) == (scenarioLength - 5), "Length of streams not matching"
     
