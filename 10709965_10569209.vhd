@@ -8,13 +8,13 @@ entity project_reti_logiche is
            i_start : in std_logic;
            i_w : in std_logic;
            
-           o_z0 : out std_logic_vector(7 downto 0);        --this output is generated from the datapath
-           o_z1 : out std_logic_vector(7 downto 0);        --this output is generated from the datapath
-           o_z2 : out std_logic_vector(7 downto 0);        --this output is generated from the datapath
-           o_z3 : out std_logic_vector(7 downto 0);        --this output is generated from the datapath
+           o_z0 : out std_logic_vector(7 downto 0);
+           o_z1 : out std_logic_vector(7 downto 0);
+           o_z2 : out std_logic_vector(7 downto 0);
+           o_z3 : out std_logic_vector(7 downto 0);
            o_done : out STD_LOGIC;
            
-           o_mem_addr : out std_logic_vector(15 downto 0);  --this output is generated from the datapath
+           o_mem_addr : out std_logic_vector(15 downto 0);
            i_mem_data : in std_logic_vector(7 downto 0);
            o_mem_we : out std_logic;
            o_mem_en : out std_logic);
@@ -185,12 +185,12 @@ signal o_reg_z0 : STD_LOGIC_VECTOR (7 downto 0);
 signal o_reg_z1 : STD_LOGIC_VECTOR (7 downto 0);
 signal o_reg_z2 : STD_LOGIC_VECTOR (7 downto 0);
 signal o_reg_z3 : STD_LOGIC_VECTOR (7 downto 0);
---needed to reset the memory_addr buffer when entering a new start sequence coming from a START=0 sequence.
 
 begin    
     process(i_clk, i_rst)
     begin
         
+        --on reset, we clear all the FF
         if(i_rst = '1') then
         
             o_reg_sum <= "00000";
@@ -204,31 +204,28 @@ begin
             
         elsif i_clk'event and i_clk = '1' then
         
-            --if r_load = '1' and i_start = '1' then
             if i_start = '1' then
                 
                 --assign to the sum register the previous sum operation result
                 o_reg_sum <= sum;
                 
-                --raise the sequence entering flag
-                --start_sequence_entered <= '1';
-                
-                --save the selector bits if the sum inside its reg is < 2
+                --save the selector bits if the counter register's value is < "00010"
+                --if 0, we save the MSB, if 1 we save the LSB 
                 if o_reg_sum = "00000" then
                     o_reg_selector(1) <= i_w;
                 elsif o_reg_sum = "00001" then
                     o_reg_selector(0) <= i_w;
-                --after the selector, save the 16(max) bits of the memory (reg_sum >= 2)
+                --after the selector, save up to 16 bits of the memory address (reg_sum >= 2)
                 else
                     --start the buffer write from the MSB (17 - reg_sum(>=2) = 15). No overflow check as given from the tb.
                     o_reg_mem_addr(17 - to_integer(unsigned(o_reg_sum))) <= i_w;
                 end if;
             else
+                --when the start sequence ends, we reset the counter to prevent overflow issues and to prepare it for the next iteration if any
                 o_reg_sum <= "00000";
             end if;
 
-            --some bits manipulation: after the START=1 sequence, create the adjusted memory_address by logic shift the buffer bits to the right by the formula: [15 - (current_counter -3)]
-            --note that the current counter has incremented by one from the last START=1 signal clock cycle, the "minus 3 magic" comes from here (see the written report for more)
+            --when the memory address is written, we pad it to the right adding (18 - counter) zeros to reach 16 bits
             if i_update_mem_addr = '1' then
                 o_reg_adj_mem_addr <= std_logic_vector(unsigned(o_reg_mem_addr) srl (18 - to_integer(unsigned(o_reg_sum))));
             end if;
@@ -248,13 +245,13 @@ begin
             if i_reset_mem = '1' then
                 o_reg_mem_addr <= "0000000000000000";
                 o_reg_adj_mem_addr <= "0000000000000000";
-                --o_reg_selector <= "00";
             end if;
             
         end if;
     end process;
-    
-    sum <= o_reg_sum + "00001"; --if i_start is low, sum is constant!
+
+    --if i_start is low, sum is constant!
+    sum <= o_reg_sum + "00001"; 
     
     --assign the correct (shifted) memory address
     o_mem_addr <= o_reg_adj_mem_addr;
