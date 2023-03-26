@@ -26,6 +26,7 @@ maxBufferLength = args.maxBufferLength
 randomResetProb = args.randomResetProb
 TBnum = args.TBnum 
 
+random.seed(seed)
 assert numberOfRAMChunks < arrayLength, "numberOfRAMChunks must be less than arrayLength"
 
 positions = ["00","01","10","11"]
@@ -38,12 +39,11 @@ checkEmpty = '''
 \tASSERT tb_z3 = "00000000" REPORT "TEST FALLITO (postreset Z0--Z3 != 0 ) found " & integer'image(to_integer(unsigned(tb_z3))) severity failure; 
 '''
 
-
+# Repeating for the requested test benches number
 for _ in range(TBnum):
     with open('tbTemplate','r') as f:
         template = f.read()
         f.close()
-
 
     # returns a randomly long, sorted array of random valid RAM positions
     ramPositions = sorted(random.sample(range(arrayLength), k=random.randint(numberOfRAMChunks/2,numberOfRAMChunks)))
@@ -77,7 +77,8 @@ for _ in range(TBnum):
     reset = ''
 
     testAsserts = ''
-
+    
+    # array to fill with the current values found if FF to check that they maintained the preious state
     memValues = [0,0,0,0]
 
     for bn in range(numberOfBlocks):
@@ -87,10 +88,9 @@ for _ in range(TBnum):
         scenarioLength += 2
 
         # to get the memory address i generate a random int, cast to binary
-        # and finally reverse it as the W has LSB first
         mem = random.randint(0,arrayLength)
         memValue = RAM.get(mem, fallbackValue)
-        memoryAddress = str(bin(mem)).split("0b")[1][::-1]
+        memoryAddress = str(bin(mem)).split("0b")[1]
 
         memValues[posDec] = memValue
         
@@ -117,6 +117,7 @@ for _ in range(TBnum):
         testAsserts += "\tWAIT UNTIL tb_done = '0';\n"
         testAsserts += "\tWAIT FOR CLOCK_PERIOD/2;\n"
         testAsserts += checkEmpty
+        # if after the test, a reset flag is set to 1, we assume that the circuit must reset Zx FF to zero
         if resetFlag == "1":
             memValues = [0,0,0,0]
 
